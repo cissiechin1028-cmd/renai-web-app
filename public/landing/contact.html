@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>お問い合わせ | RenAI</title>
+  <link rel="icon" href="assets/images/renai-icon.svg" type="image/svg+xml" />
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #f7f9fc;
+      color: #222;
+      line-height: 1.8;
+    }
+
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+    }
+
+    .lead {
+      color: #555;
+      margin-bottom: 32px;
+      font-size: 15px;
+    }
+
+    form {
+      background: #fff;
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(20, 30, 60, 0.08);
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin: 18px 0 8px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d8dee9;
+      border-radius: 12px;
+      padding: 14px 15px;
+      font-size: 16px;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 160px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 28px;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: #111827;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .note {
+      font-size: 13px;
+      color: #777;
+      margin-top: 16px;
+    }
+
+    .back {
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .back a {
+      color: #4f46e5;
+      text-decoration: underline;
+      font-size: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>お問い合わせ</h1>
+
+    <p class="lead">
+      サービスに関するご質問、不具合、お支払い・サブスクに関するご相談は、
+      以下のフォームよりお問い合わせください。通常、1営業日以内にご返信いたします。
+    </p>
+
+    <form action="https://henxin-ai.onrender.com/contact" method="POST">
+      <label for="name">お名前</label>
+      <input id="name" name="name" type="text" placeholder="山田 太郎" required />
+
+      <label for="email">メールアドレス</label>
+      <input id="email" name="email" type="email" placeholder="example@gmail.com" required />
+
+      <label for="category">お問い合わせ種別</label>
+      <select id="category" name="category" required>
+        <option value="">選択してください</option>
+        <option value="利用方法について">利用方法について</option>
+        <option value="お支払い・サブスクについて">お支払い・サブスクについて</option>
+        <option value="不具合について">不具合について</option>
+        <option value="データ削除について">データ削除について</option>
+        <option value="その他">その他</option>
+      </select>
+
+      <label for="message">お問い合わせ内容</label>
+      <textarea id="message" name="message" placeholder="お問い合わせ内容をご記入ください。" required></textarea>
+
+      <button type="submit">送信する</button>
+
+      <p class="note">
+        ※ご入力いただいた内容は、お問い合わせ対応のために使用します。
+      </p>
+    </form>
+
+    <div class="back">
+      <a href="/">トップページへ戻る</a>
+    </div>
+  </div>
+</body>
+</html>

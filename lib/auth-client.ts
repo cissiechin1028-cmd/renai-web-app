@@ -45,7 +45,7 @@ export function captureOAuthSession(): AuthSession | null {
 
 export async function sendMagicLink(email: string) {
   const { url, anonKey } = config();
-  const redirectTo = `${window.location.origin}/`;
+  const redirectTo = `${window.location.origin}/app`;
   const response = await fetch(`${url}/auth/v1/otp`, {
     method: "POST",
     headers: { apikey: anonKey, "Content-Type": "application/json" },
@@ -56,7 +56,7 @@ export async function sendMagicLink(email: string) {
 
 export function signInWithGoogle() {
   const { url } = config();
-  const redirectTo = encodeURIComponent(`${window.location.origin}/`);
+  const redirectTo = encodeURIComponent(`${window.location.origin}/app`);
   window.location.assign(`${url}/auth/v1/authorize?provider=google&redirect_to=${redirectTo}`);
 }
 
