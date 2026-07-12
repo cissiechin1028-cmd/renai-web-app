@@ -32,6 +32,7 @@ export interface ReplyResult {
   alternatives: Array<{ tone: string; text: string }>;
   reason: string;
   caution?: string;
+  conversationRead: string;
 }
 
 export interface ChatAnalysisResult {
@@ -41,8 +42,11 @@ export interface ChatAnalysisResult {
   relationshipTrend: "rising" | "stable" | "falling";
   progressRisk: number;
   summary: string;
+  currentPsychology: string;
   evidence: string[];
+  keyMoments: Array<{ quote: string; interpretation: string }>;
   actions: string[];
+  nextBestMove: string;
 }
 
 export const FREE_LIFETIME_LIMIT = 5;
