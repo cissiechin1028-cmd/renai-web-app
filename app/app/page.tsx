@@ -1,5 +1,6 @@
 "use client";
 
+import "../globals.css";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { AuthSession } from "../../lib/auth-client";
 import { captureOAuthSession, sendMagicLink, signInWithGoogle, signOut } from "../../lib/auth-client";
