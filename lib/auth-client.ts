@@ -7,6 +7,11 @@ export interface AuthSession {
 
 const SESSION_KEY = "renai.auth.session";
 
+function saveSession(session: AuthSession) {
+  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return session;
+}
+
 function config() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -43,15 +48,37 @@ export function captureOAuthSession(): AuthSession | null {
   return session;
 }
 
-export async function sendMagicLink(email: string) {
+export async function sendEmailOtp(email: string) {
   const { url, anonKey } = config();
-  const redirectTo = `${window.location.origin}/app`;
   const response = await fetch(`${url}/auth/v1/otp`, {
     method: "POST",
     headers: { apikey: anonKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, create_user: true, options: { email_redirect_to: redirectTo } }),
+    body: JSON.stringify({ email: email.trim(), create_user: true }),
   });
-  if (!response.ok) throw new Error(`MAGIC_LINK_FAILED_${response.status}`);
+  if (!response.ok) throw new Error(`EMAIL_OTP_FAILED_${response.status}`);
+}
+
+export async function verifyEmailOtp(email: string, token: string): Promise<AuthSession> {
+  const { url, anonKey } = config();
+  const response = await fetch(`${url}/auth/v1/verify`, {
+    method: "POST",
+    headers: { apikey: anonKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim(), token: token.trim(), type: "email" }),
+  });
+  if (!response.ok) throw new Error(`EMAIL_OTP_VERIFY_FAILED_${response.status}`);
+  const data = await response.json() as {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+    user?: { email?: string };
+  };
+  if (!data.access_token) throw new Error("EMAIL_OTP_VERIFY_INVALID_RESPONSE");
+  return saveSession({
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token || "",
+    expiresAt: Date.now() + Number(data.expires_in || 3600) * 1000,
+    email: data.user?.email || email.trim(),
+  });
 }
 
 export function signInWithGoogle() {

@@ -3,7 +3,7 @@
 import "../globals.css";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { AuthSession } from "../../lib/auth-client";
-import { captureOAuthSession, sendMagicLink, signInWithGoogle, signOut } from "../../lib/auth-client";
+import { captureOAuthSession, sendEmailOtp, signInWithGoogle, signOut, verifyEmailOtp } from "../../lib/auth-client";
 import type { ChatAnalysisResult, ReplyResult } from "../../lib/domain";
 import { createAnalysis, createCheckout, deleteAccount, deleteAnalysis, getAdminSummary, getHistory, getProfile, openBillingPortal } from "../../lib/web-api";
 
@@ -23,6 +23,9 @@ export default function Home() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [authStep, setAuthStep] = useState<"email" | "otp">("email");
+  const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [result, setResult] = useState<ReplyResult | ChatAnalysisResult | null>(null);
@@ -97,16 +100,47 @@ export default function Home() {
     }
   }
 
-  async function requestMagicLink() {
+  function closeAuth() {
+    setShowAuth(false);
+    setAuthStep("email");
+    setOtp("");
     setAuthMessage("");
-    try { await sendMagicLink(email); setAuthMessage("ログイン用リンクをメールに送りました。"); }
+    setAuthLoading(false);
+  }
+
+  async function requestEmailOtp() {
+    setAuthMessage("");
+    setAuthLoading(true);
+    try {
+      await sendEmailOtp(email);
+      setAuthStep("otp");
+      setAuthMessage("6桁の確認コードをメールに送りました。");
+    }
     catch (error) {
       const code = error instanceof Error ? error.message : "LOGIN_FAILED";
       if (code === "AUTH_NOT_CONFIGURED") setAuthMessage("ログイン設定を読み込めませんでした。ページを再読み込みしてください。");
       else if (code.endsWith("_429")) setAuthMessage("送信回数が多すぎます。少し時間をおいて再度お試しください。");
       else if (code.endsWith("_401") || code.endsWith("_403")) setAuthMessage("ログインキーを確認できませんでした。運営側で設定を確認します。");
-      else setAuthMessage("ログインメールを送信できませんでした。少し時間をおいて再度お試しください。");
+      else setAuthMessage("確認コードを送信できませんでした。少し時間をおいて再度お試しください。");
     }
+    finally { setAuthLoading(false); }
+  }
+
+  async function confirmEmailOtp() {
+    setAuthMessage("");
+    setAuthLoading(true);
+    try {
+      const activeSession = await verifyEmailOtp(email, otp);
+      setSession(activeSession);
+      closeAuth();
+      loadAccountData(activeSession).catch(() => undefined);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "LOGIN_FAILED";
+      if (code === "AUTH_NOT_CONFIGURED") setAuthMessage("ログイン設定を読み込めませんでした。ページを再読み込みしてください。");
+      else if (code.endsWith("_429")) setAuthMessage("確認回数が多すぎます。少し時間をおいて再度お試しください。");
+      else if (code.endsWith("_400") || code.endsWith("_401") || code.endsWith("_403")) setAuthMessage("確認コードが違うか、有効期限が切れています。もう一度ご確認ください。");
+      else setAuthMessage("ログインできませんでした。確認コードをもう一度ご確認ください。");
+    } finally { setAuthLoading(false); }
   }
 
   return (
@@ -166,7 +200,7 @@ export default function Home() {
 
       <nav className="mobile-nav"><button onClick={() => setView("home")}>⌂<small>分析</small></button><button onClick={() => setView("history")}>◷<small>履歴</small></button><button onClick={() => setView("account")}>○<small>アカウント</small></button></nav>
       {profile?.role === "admin" && <button className="admin-link" onClick={() => setView("admin")}>運営画面</button>}
-      {showAuth && <div className="modal-backdrop" onMouseDown={() => setShowAuth(false)}><section className="auth-modal" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setShowAuth(false)}>×</button><span className="brand-mark">R</span><h2>RenAIをはじめる</h2><p>登録すると5回の無料体験が利用できます。</p><button className="google-button" onClick={signInWithGoogle}>Googleで続ける</button><div className="divider"><span>または</span></div><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="メールアドレス"/><button className="primary-action" disabled={!email.includes("@") } onClick={requestMagicLink}>メールでログイン</button>{authMessage && <p className="auth-message">{authMessage}</p>}<small>続行すると利用規約とプライバシーポリシーに同意したものとみなされます。</small></section></div>}
+      {showAuth && <div className="modal-backdrop" onMouseDown={closeAuth}><section className="auth-modal" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={closeAuth}>×</button><span className="brand-mark">R</span><h2>RenAIをはじめる</h2><p>登録すると5回の無料体験が利用できます。</p>{authStep === "email" ? <><button className="google-button" onClick={signInWithGoogle}>Googleで続ける</button><div className="divider"><span>または</span></div><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="メールアドレス" autoComplete="email"/><button className="primary-action" disabled={!email.includes("@") || authLoading} onClick={requestEmailOtp}>{authLoading ? "送信中…" : "メールアドレスで続ける"}</button></> : <><p className="otp-destination"><strong>{email}</strong><br />に届いた6桁の確認コードを入力してください。</p><input className="otp-input" type="text" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" maxLength={6}/><button className="primary-action" disabled={otp.length !== 6 || authLoading} onClick={confirmEmailOtp}>{authLoading ? "確認中…" : "確認してログイン"}</button><div className="otp-actions"><button onClick={() => { setAuthStep("email"); setOtp(""); setAuthMessage(""); }}>メールアドレスを変更</button><button disabled={authLoading} onClick={requestEmailOtp}>コードを再送</button></div></>}{authMessage && <p className="auth-message">{authMessage}</p>}<small>続行すると利用規約とプライバシーポリシーに同意したものとみなされます。</small></section></div>}
     </main>
   );
 }
