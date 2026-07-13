@@ -51,7 +51,7 @@ export async function sendMagicLink(email: string) {
     headers: { apikey: anonKey, "Content-Type": "application/json" },
     body: JSON.stringify({ email, create_user: true, options: { email_redirect_to: redirectTo } }),
   });
-  if (!response.ok) throw new Error("MAGIC_LINK_FAILED");
+  if (!response.ok) throw new Error(`MAGIC_LINK_FAILED_${response.status}`);
 }
 
 export function signInWithGoogle() {

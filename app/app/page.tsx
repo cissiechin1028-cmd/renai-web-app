@@ -100,7 +100,13 @@ export default function Home() {
   async function requestMagicLink() {
     setAuthMessage("");
     try { await sendMagicLink(email); setAuthMessage("ログイン用リンクをメールに送りました。"); }
-    catch { setAuthMessage("現在ログイン設定を準備中です。設定完了後に利用できます。"); }
+    catch (error) {
+      const code = error instanceof Error ? error.message : "LOGIN_FAILED";
+      if (code === "AUTH_NOT_CONFIGURED") setAuthMessage("ログイン設定を読み込めませんでした。ページを再読み込みしてください。");
+      else if (code.endsWith("_429")) setAuthMessage("送信回数が多すぎます。少し時間をおいて再度お試しください。");
+      else if (code.endsWith("_401") || code.endsWith("_403")) setAuthMessage("ログインキーを確認できませんでした。運営側で設定を確認します。");
+      else setAuthMessage("ログインメールを送信できませんでした。少し時間をおいて再度お試しください。");
+    }
   }
 
   return (
